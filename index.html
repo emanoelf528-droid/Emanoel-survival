@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>Emanoel Hub</title>
+    <style>
+        /* ===== RESET E VARIÁVEIS ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        :root {
+            --bg-panel: #111118;
+            --bg-card: #1a1a24;
+            --bg-card2: #22222e;
+            --border: #2e2e3e;
+            --text: #e8e8f0;
+            --text-dim: #8888a0;
+            --yellow: #f5c518;
+            --yellow-dim: #b8941a;
+            --green: #2ecc71;
+            --green-dim: #1a7a42;
+            --red: #e74c3c;
+            --red-dim: #8a2a20;
+            --blue: #3498db;
+            --radius: 14px;
+            --radius-sm: 9px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.6);
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --panel-scale: 1;
+            --anim-speed: 0.25s;
+        }
+
+        body.light-theme {
+            --bg-panel: #f0f0f5;
+            --bg-card: #ffffff;
+            --bg-card2: #e8e8f0;
+            --border: #d0d0dd;
+            --text: #1a1a2e;
+            --text-dim: #6a6a80;
+            --shadow: 0 8px 32px rgba(0,0,0,0.15);
+        }
+
+        body.no-anim * {
+            transition-duration: 0s !important;
+            animation-duration: 0s !important;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #050508;
+            font-family: var(--font);
+            color: var(--text);
+        }
+
+        body.light-theme {
+            background: #d8d8e0;
+        }
+
+        /* ===== BOLHA FLUTUANTE ===== */
+        #bubble {
+            position: fixed;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f5c518 0%, #d4a010 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 800;
+            color: #111;
+            z-index: 10000;
+            cursor: grab;
+            box-shadow: 0 4px 20px rgba(245,197,24,0.45), 0 0 0 2px rgba(245,197,24,0.2);
+            transition: transform var(--anim-speed) ease, box-shadow var(--anim-speed) ease;
+            touch-action: none;
+            will-change: transform;
+        }
+
+        #bubble:active {
+            cursor: grabbing;
+        }
+
+        #bubble.dragging {
+            transition: none;
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(245,197,24,0.6), 0 0 0 3px rgba(245,197,24,0.3);
+        }
+
+        #bubble .pulse {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 2px solid rgba(245,197,24,0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        /* ===== PAINEL ===== */
+        #panel {
+            position: fixed;
+            z-index: 9999;
+            width: 300px;
+            max-height: calc(100vh - 40px);
+            background: var(--bg-panel);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform-origin: top left;
+            transition: opacity var(--anim-speed) ease, transform var(--anim-speed) ease;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.9) translateY(-6px);
+            backdrop-filter: blur(12px);
+        }
+
+        #panel.open {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1) translateY(0);
+        }
+
+        /* Cabeçalho */
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px 10px;
+            background: linear-gradient(180deg, var(--bg-card2), var(--bg-panel));
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .panel-header h1 {
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: var(--yellow);
+            line-height: 1.1;
+        }
+
+        .panel-header .subtitle {
+            font-size: 9px;
+            color: var(--text-dim);
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            margin-top: 1px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+            transition: background var(--anim-speed);
+        }
+
+        .status-dot.yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+        .status-dot.red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+        #closeBtn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg-card);
+            color: var(--text-dim);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background var(--anim-speed), color var(--anim-speed);
+            flex-shrink: 0;
+        }
+
+        #closeBtn:active {
+            background: var(--red);
+            color: #fff;
+        }
+
+        /* Abas */
+        .tabs {
+            display: flex;
+            gap: 2px;
+            padding: 8px 10px 0;
+            background: var(--bg-panel);
+            overflow-x: auto;
+            scrollbar-width: none;
+            flex-shrink: 0;
+        }
+
+        .tabs::-webkit-scrollbar { display: none; }
+
+        .tab {
+            flex: 0 0 auto;
+            padding: 6px 10px;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--anim-speed), color var(--anim-speed);
+            white-space: nowrap;
+            font-family: var(--font);
+        }
+
+        .tab.active {
+            background: var(--bg-card);
+            color: var(--yellow);
+        }
+
+        .tab:active { opacity: 0.7; }
+
+        /* Conteúdo */
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px;
+            background: var(--bg-panel);
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .panel-body::-webkit-scrollbar { width: 4px; }
+        .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn var(--anim-speed) ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title .badge {
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: var(--bg-card2);
+            color: var(--text-dim);
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        /* Botões */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-card2);
+            color: var(--text);
+            font-size: 11px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: background var(--anim-speed), border-color var(--anim-speed), transform 0.1s;
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        .btn.yellow { border-color: var(--yellow-dim); color: var(--yellow); }
+        .btn.yellow.on { background: var(--yellow); color: #111; border-color: var(--yellow); }
+        .btn.green { border-color: var(--green-dim); color: var(--green); }
+        .btn.green.on { background: var(--green); color: #fff; border-color: var(--green); }
+        .btn.red { border-color: var(--red-dim); color: var(--red); }
+        .btn.red.on { background: var(--red); color: #fff; border-color: var(--red); }
+        .btn.blue { border-color: #2a5a8a; color: var(--blue); }
+        .btn.blue.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .btn-row .btn { flex: 1; }
+
+        /* Indicadores */
+        .indicator-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 11px;
+        }
+
+        .indicator-row + .indicator-row {
+            border-top: 1px solid var(--border);
+        }
+
+        .indicator-label {
+            color: var(--text-dim);
+            font-size: 10px;
+        }
+
+        .indicator-value {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: var(--bg-card2);
+            color: var(--text-dim);
+            transition: background var(--anim-speed), color var(--anim-speed);
+        }
+
+        .indicator-value.on {
+            background: rgba(46,204,113,0.15);
+            color: var(--green);
+        }
+
+        .indicator-value.off {
+            background: rgba(231,76,60,0.12);
+            color: var(--red);
+        }
+
+        .indicator-value.warn {
+            background: rgba(245,197,24,0.12);
+            color: var(--yellow);
+        }
+
+        /* Barra de progresso */
+        .progress-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-card2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: var(--yellow);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-fill.green { background: var(--green); }
+        .progress-fill.red { background: var(--red); }
+
+        .progress-text {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-dim);
+            min-width: 32px;
+            text-align: right;
+        }
+
+        /* Lista de itens */
+        .item-list {
+            max-height: 100px;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+
+        .item-list::-webkit-scrollbar { display: none; }
+
+        .item-entry {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+            font-size: 10px;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .item-entry:last-child { border-bottom: none; }
+
+        .item-entry .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--green);
+            flex-shrink: 0;
+        }
+
+        .item-entry .name { flex: 1; }
+        .item-entry .qty { color: var(--yellow); font-weight: 700; font-size: 9px; }
+
+        .empty-msg {
+            text-align: center;
+            padding: 12px 0;
+            font-size: 10px;
+            color: var(--text-dim);
+            opacity: 0.6;
+        }
+
+        /* Slider */
+        .slider-group {
+            margin: 8px 0;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .slider-header label {
+            font-size: 10px;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .slider-header .val {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--yellow);
+            min-width: 36px;
+            text-align: right;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-card2);
+            outline: none;
+            transition: background 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--yellow);
+            border: 2px solid var(--bg-panel);
+            box-shadow: 0 2px 8px rgba(245,197,24,0.4);
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--yellow);
+            border: 2px solid var(--bg-panel);
+            cursor: pointer;
+        }
+
+        /* Toggle switch */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 0;
+        }
+
+        .toggle-row + .toggle-row {
+            border-top: 1px solid var(--border);
+        }
+
+        .toggle-label {
+            font-size: 11px;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .toggle {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            border-radius: 10px;
+            background: var(--bg-card2);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: background var(--anim-speed), border-color var(--anim-speed);
+            flex-shrink: 0;
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--text-dim);
+            transition: transform var(--anim-speed), background var(--anim-speed);
+        }
+
+        .toggle.on {
+            background: rgba(46,204,113,0.25);
+            border-color: var(--green);
+        }
+
+        .toggle.on::after {
+            transform: translateX(16px);
+            background: var(--green);
+        }
+
+        /* Status de forno */
+        .oven-states {
+            display: flex;
+            gap: 4px;
+            margin: 6px 0;
+        }
+
+        .oven-state {
+            flex: 1;
+            padding: 6px 4px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-card2);
+            text-align: center;
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-dim);
+            transition: all var(--anim-speed);
+        }
+
+        .oven-state.active {
+            border-color: var(--yellow);
+            background: rgba(245,197,24,0.12);
+            color: var(--yellow);
+        }
+
+        .oven-state.active.done {
+            border-color: var(--green);
+            background: rgba(46,204,113,0.12);
+            color: var(--green);
+        }
+
+        /* Armazém */
+        .shelf-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 3px;
+            margin: 6px 0;
+        }
+
+        .shelf-slot {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            background: var(--bg-card2);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: 700;
+            color: var(--text-dim);
+            transition: all var(--anim-speed);
+        }
+
+        .shelf-slot.filled {
+            background: rgba(245,197,24,0.12);
+            border-color: var(--yellow-dim);
+            color: var(--yellow);
+        }
+
+        /* Configurações */
+        .settings-section {
+            margin-bottom: 8px;
+        }
+
+        .settings-section .card-title {
+            margin-bottom: 4px;
+        }
+
+        /* Modal de reset */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 10001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            animation: fadeIn 0.15s ease;
+        }
+
+        .modal-box {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            max-width: 260px;
+            width: 100%;
+            box-shadow: var(--shadow);
+        }
+
+        .modal-box p {
+            font-size: 12px;
+            color: var(--text);
+            margin-bottom: 12px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .modal-box .btn-row { margin-bottom: 0; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text);
+            box-shadow: var(--shadow);
+            z-index: 10002;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Scroll hint */
+        .scroll-hint {
+            text-align: center;
+            font-size: 8px;
+            color: var(--text-dim);
+            opacity: 0.4;
+            padding: 4px 0;
+        }
+
+        /* Aviso de integração */
+        .notice {
+            font-size: 8.5px;
+            color: var(--text-dim);
+            line-height: 1.4;
+            padding: 8px 10px;
+            background: var(--bg-card2);
+            border-radius: var(--radius-sm);
+            border-left: 2px solid var(--yellow);
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== BOLHA FLUTUANTE ===== -->
+    <div id="bubble" style="right: 16px; top: 100px;">
+        <span class="pulse"></span>
+        E
+    </div>
+
+    <!-- ===== PAINEL ===== -->
+    <div id="panel" style="right: 16px; top: 100px;">
+        <!-- Cabeçalho -->
+        <div class="panel-header">
+            <div>
+                <h1>EMANOEL HUB</h1>
+                <div class="subtitle">Painel de ferramentas mobile</div>
+            </div>
+            <div class="header-right">
+                <div class="status-dots">
+                    <div class="status-dot" id="dot1"></div>
+                    <div class="status-dot yellow" id="dot2"></div>
+                    <div class="status-dot" id="dot3"></div>
+                </div>
+                <button id="closeBtn" aria-label="Fechar">✕</button>
+            </div>
+        </div>
+
+        <!-- Abas -->
+        <div class="tabs" id="tabs">
+            <button class="tab active" data-tab="main">Principal</button>
+            <button class="tab" data-tab="collect">Coleta</button>
+            <button class="tab" data-tab="production">Produção</button>
+            <button class="tab" data-tab="weapons">Armas</button>
+            <button class="tab" data-tab="movement">Movimento</button>
+            <button class="tab" data-tab="settings">Config</button>
+        </div>
+
+        <!-- Corpo -->
+        <div class="panel-body">
+
+            <!-- ===== PRINCIPAL ===== -->
+            <div class="tab-content active" id="tab-main">
+                <div class="card">
+                    <div class="card-title">Ferramentas <span class="badge">demo local</span></div>
+                    <div class="btn-row">
+                        <button class="btn green on" id="btnToolsToggle">👁 Mostrar</button>
+                        <button class="btn red" id="btnResetMain">↺ Reset</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Estado das funções</div>
+                    <div class="indicator-row">
+                        <span class="indicator-label">Coleta</span>
+                        <span class="indicator-value off" id="stCollect">Desligado</span>
+                    </div>
+                    <div class="indicator-row">
+                        <span class="indicator-label">Produção</span>
+                        <span class="indicator-value off" id="stProduce">Desligado</span>
+                    </div>
+                    <div class="indicator-row">
+                        <span class="indicator-label">Armas</span>
+                        <span class="indicator-value off" id="stWeapons">Desligado</span>
+                    </div>
+                    <div class="indicator-row">
+                        <span class="indicator-label">Movimento</span>
+                        <span class="indicator-value off" id="stMove">Desligado</span>
+                    </div>
+                </div>
+
+                <div class="notice">
+                    ⚠️ Interface de demonstração. O HTML não controla o Roblox — integrações reais exigem API autorizada.
+                </div>
+            </div>
+
+            <!-- ===== COLETA ===== -->
+            <div class="tab-content" id="tab-collect">
+                <div class="card">
+                    <div class="card-title">Localizar cadáveres</div>
+                    <button class="btn yellow" id="btnScanCorpses">🔍 Escanear área</button>
+                    <div class="progress-wrap">
+                        <div class="progress-bar"><div class="progress-fill" id="corpseProgress" style="width:0%"></div></div>
+                        <span class="progress-text" id="corpseText">0/3</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Indicadores visuais</div>
+                    <div class="toggle-row">
+                        <span class="toggle-label">Mostrar objetos</span>
+                        <div class="toggle" id="toggleObjects"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Itens encontrados <span class="badge" id="itemCount">0</span></div>
+                    <div class="item-list" id="itemList">
+                        <div class="empty-msg">Nenhum item encontrado</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== PRODUÇÃO ===== -->
+            <div class="tab-content" id="tab-production">
+                <div class="card">
+                    <div class="card-title">Tortas cruas</div>
+                    <div class="indicator-row">
+                        <span class="indicator-label">Identificar tortas</span>
+                        <span class="indicator-value" id="rawPieStatus">—</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Estado do forno</div>
+                    <div class="oven-states">
+                        <div class="oven-state active" data-oven="empty">Vazio</div>
+                        <div class="oven-state" data-oven="baking">Assando</div>
+                        <div class="oven-state" data-oven="ready">Pronto</div>
+                    </div>
+                    <button class="btn yellow" id="btnBake">🔥 Assar torta</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Prateleiras de armazenamento</div>
+                    <div class="shelf-grid" id="shelfGrid"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Etapas da produção</div>
+                    <div class="indicator-row">
+                        <span class="indicator-label">1. Preparar</span>
+                        <span class="indicator-value" id="stepPrep">Aguardando</span>
+                    </div>
+                    <div class="indicator-row">
+                        <span class="indicator-label">2. Assar</span>
+                        <span class="indicator-value" id="stepBake">Aguardando</span>
+                    </div>
+                    <div class="indicator-row">
+                        <span class="indicator-label">3. Guardar</span>
+                        <span class="indicator-value" id="stepStore">Aguardando</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== ARMAS ===== -->
+            <div class="tab-content" id="tab-weapons">
+                <div class="card">
+                    <div class="card-title">Armas configuradas <span class="badge" id="weaponCount">0</span></div>
+                    <div class="item-list" id="weaponList">
+                        <div class="empty-msg">Nenhuma arma adicionada</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Adicionar arma (manual)</div>
+                    <div style="display:flex;gap:6px;">
+                        <input type="text" id="weaponInput" placeholder="Nome da arma" maxlength="20"
+                            style="flex:1;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text);font-size:11px;font-family:var(--font);outline:none;">
+                        <button class="btn yellow" id="btnAddWeapon" style="width:auto;padding:8px 14px;">+</button>
+                    </div>
+                </div>
+
+                <div class="notice">
+                    Lista configurável. Nomes de armas do jogo não foram fornecidos — adicione manualmente.
+                </div>
+            </div>
+
+            <!-- ===== MOVIMENTO ===== -->
+            <div class="tab-content" id="tab-movement">
+                <div class="card">
+                    <div class="card-title">Controle de velocidade</div>
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <label>Velocidade</label>
+                            <span class="val" id="speedVal">50</span>
+                        </div>
+                        <input type="range" id="speedSlider" min="1" max="200" value="50">
+                    </div>
+                    <button class="btn green" id="btnSpeedToggle">▶ Ativar modo velocidade</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Indicador</div>
+                    <div class="indicator-row">
+                        <span class="indicator-label">Modo velocidade</span>
+                        <span class="indicator-value off" id="speedStatus">Desligado</span>
+                    </div>
+                    <div class="indicator-row">
+                        <span class="indicator-label">Valor atual</span>
+                        <span class="indicator-value warn" id="speedCurrent">50</span>
+                    </div>
+                </div>
+
+                <div class="notice">
+                    Controle apenas de interface. A velocidade real do personagem não é alterada por HTML.
+                </div>
+            </div>
+
+            <!-- ===== CONFIGURAÇÕES ===== -->
+            <div class="tab-content" id="tab-settings">
+                <div class="settings-section card">
+                    <div class="card-title">Aparência</div>
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <label>Tamanho do painel</label>
+                            <span class="val" id="scaleVal">100%</span>
+                        </div>
+                        <input type="range" id="scaleSlider" min="70" max="130" value="100">
+                    </div>
+                    <div class="toggle-row">
+                        <span class="toggle-label">Animações</span>
+                        <div class="toggle on" id="toggleAnim"></div>
+                    </div>
+                    <div class="toggle-row">
+                        <span class="toggle-label">Tema claro</span>
+                        <div class="toggle" id="toggleTheme"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Restaurar</div>
+                    <button class="btn red" id="btnResetAll">↺ Restaurar configurações padrão</button>
+                </div>
+
+                <div class="notice">
+                    Preferências salvas localmente via localStorage.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modalReset">
+        <div class="modal-box">
+            <p>Restaurar todas as configurações padrão?</p>
+            <div class="btn-row">
+                <button class="btn" id="modalCancel">Cancelar</button>
+                <button class="btn red on" id="modalConfirm">Restaurar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TOAST ===== -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ==========================================
+            // ESTADO GLOBAL
+            // ==========================================
+            const DEFAULT_STATE = {
+                bubbleX: window.innerWidth - 72,
+                bubbleY: 100,
+                panelScale: 1,
+                animOn: true,
+                lightTheme: false,
+                toolsVisible: true,
+                objectsVisible: false,
+                speed: 50,
+                speedMode: false,
+                collectActive: false,
+                produceActive: false,
+                weaponsActive: false,
+                moveActive: false,
+                weapons: [],
+                foundItems: [],
+                corpseCount: 0,
+                ovenState: 'empty',
+                shelfFilled: 0
+            };
+
+            let state = { ...DEFAULT_STATE };
+
+            // ==========================================
+            // ELEMENTOS DOM
+            // ==========================================
+            const $ = (id) => document.getElementById(id);
+            const bubble = $('bubble');
+            const panel = $('panel');
+            const closeBtn = $('closeBtn');
+            const tabsContainer = $('tabs');
+            const toastEl = $('toast');
+            const modalReset = $('modalReset');
+
+            // ==========================================
+            // PERSISTÊNCIA
+            // ==========================================
+            function saveState() {
+                try {
+                    localStorage.setItem('emanoelHub', JSON.stringify(state));
+                } catch (e) { /* silencioso */ }
+            }
+
+            function loadState() {
+                try {
+                    const raw = localStorage.getItem('emanoelHub');
+                    if (raw) {
+                        const saved = JSON.parse(raw);
+                        // Mescla apenas chaves conhecidas
+                        for (const key of Object.keys(DEFAULT_STATE)) {
+                            if (saved[key] !== undefined) {
+                                state[key] = saved[key];
+                            }
+                        }
+                    }
+                } catch (e) { /* silencioso */ }
+            }
+
+            // ==========================================
+            // TOAST
+            // ==========================================
+            let toastTimer = null;
+            function showToast(msg) {
+                toastEl.textContent = msg;
+                toastEl.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toastEl.classList.remove('show');
+                }, 1600);
+            }
+
+            // ==========================================
+            // BOLHA - ARRASTAR
+            // ==========================================
+            let isDragging = false;
+            let dragStartX = 0, dragStartY = 0;
+            let bubbleStartX = 0, bubbleStartY = 0;
+            let hasMoved = false;
+
+            function getBubblePos() {
+                const rect = bubble.getBoundingClientRect();
+                return { left

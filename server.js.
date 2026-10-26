@@ -1,0 +1,108 @@
+
+const http = require("http");
+const { WebSocketServer } = require("ws");
+
+const PORT = process.env.PORT || 3000;
+const jogadores = new Map();
+
+const servidor = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({
+    jogo: "Emanoel Survival",
+    status: "online",
+    jogadores: jogadores.size
+  }));
+});
+
+const wss = new WebSocketServer({ server: servidor });
+
+wss.on("connection", (socket) => {
+  const id = Math.random().toString(36).slice(2, 10);
+
+  jogadores.set(id, { id, nome: "Sobrevivente" });
+
+  socket.send(JSON.stringify({
+    tipo: "entrada",
+    id,
+    jogadores: [...jogadores.values()]
+  }));
+
+  wss.clients.forEach((cliente) => {
+    if (cliente.readyState === 1) {
+      cliente.send(JSON.stringify({
+        tipo: "jogadores",
+        jogadores: [...jogadores.values()]
+      }));
+    }
+  });
+
+  socket.on("message", (dados) => {
+    try {
+      const mensagem = JSON.parse(dados.toString());
+
+      if (mensagem.tipo === "nome" &&
+          typeof mensagem.nome === "string") {
+        jogadores.set(id, {
+          id,
+          nome: mensagem.nome.slice(0, 20)
+        });
+      }
+
+      if (mensagem.tipo === "chat" &&
+          typeof mensagem.texto === "string") {
+        const pacote = JSON.stringify({
+          tipo: "chat",
+          id,
+          texto: mensagem.texto.slice(0, 200)
+        });
+
+        wss.clients.forEach((cliente) => {
+          if (cliente.readyState === 1) {
+            cliente.send(pacote);
+          }
+        });
+      }
+
+      if (mensagem.tipo === "posicao" &&
+          Number.isFinite(mensagem.x) &&
+          Number.isFinite(mensagem.y) &&
+          Number.isFinite(mensagem.z)) {
+        const pacote = JSON.stringify({
+          tipo: "posicao",
+          id,
+          x: mensagem.x,
+          y: mensagem.y,
+          z: mensagem.z
+        });
+
+        wss.clients.forEach((cliente) => {
+          if (cliente !== socket && cliente.readyState === 1) {
+            cliente.send(pacote);
+          }
+        });
+      }
+    } catch (erro) {
+      socket.send(JSON.stringify({
+        tipo: "erro",
+        mensagem: "Mensagem inválida"
+      }));
+    }
+  });
+
+  socket.on("close", () => {
+    jogadores.delete(id);
+
+    wss.clients.forEach((cliente) => {
+      if (cliente.readyState === 1) {
+        cliente.send(JSON.stringify({
+          tipo: "jogadores",
+          jogadores: [...jogadores.values()]
+        }));
+      }
+    });
+  });
+});
+
+servidor.listen(PORT, "0.0.0.0", () => {
+  console.log("Emanoel Survival iniciado na porta " + PORT);
+});
